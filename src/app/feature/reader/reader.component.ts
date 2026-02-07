@@ -18,7 +18,7 @@ export class ReaderComponent implements OnInit {
   private logService = inject(LogService);
   private route = inject(ActivatedRoute);
 
-  content = '// Editor is initialised, fetch log...';
+  content = '// Editor is initialised...';
 
   private editorReady = false;
   eventSource?: EventSource;
@@ -51,7 +51,6 @@ export class ReaderComponent implements OnInit {
       next: ({ data }) => {
         if (this.editorReady) {
           this.content = data;
-          console.log(this.content)
         } else {
           setTimeout(() => this.content = data);
         }
