@@ -1,0 +1,61 @@
+  .sortable { cursor: pointer; user-select: none; }
+  .sortable:hover { background-color: #f1f1f1; }
+
+  .table-container {
+    height: 100%; 
+    display: flex;
+    flex-direction: column;
+  }
+
+  .table-scrollable {
+    max-height: 60.2vh;
+    flex: 1 1 auto; 
+    overflow: auto;
+  }
+
+  .sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #f8f9fa; 
+  }
+
+  .pagination-fixed {
+    background-color: #fff;
+    padding: 1rem 0;
+    flex-shrink: 0;
+  }
+
+  .actions-col {
+    width: 120px;
+    min-width: 120px;
+    max-width: 120px;
+    text-align: right;
+  }
+
+  .clickable-cell .cell-value {
+    color: var(--bs-primary);
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .clickable-cell:hover .cell-value {
+    text-decoration: underline;
+  }
+
+
+  ::ng-deep {
+    table {
+      overflow: auto;
+      thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+      }
+      td {
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+      }
+    }
+  }

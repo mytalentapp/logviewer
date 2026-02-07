@@ -1,0 +1,73 @@
+<div>
+    @if ((logs$ | async)?.length !== 0 && !loading() && !error()) {
+        <div class="d-flex justify-content-between align-items-center py-2">
+            <input type="text" class="form-control ms-2" [(ngModel)]="searchText" placeholder="Search something...">
+        </div>
+    }
+    @if (loading()) {
+        <skeleton-loader [count]="4"/>
+    }@else if (error()) {
+        <div class="alert alert-danger ms-2 mt-3">
+        <p>{{ error() }}</p>
+        </div>
+    }@else if ((logs$ | async)?.length === 0 && !loading() && !error()) {
+        <div class="no-logs">
+            <div>
+                <img src="noresult.png" alt="noresult.png" class="img-fluid" style="height: 80px;">
+            </div>
+            <div class="d-flex flex-column align-items-center">
+                <small class="text-muted">No logs available</small>
+            </div>
+        </div>
+    }@else {
+        @if((logs$ | async | filterBy:['filename']:searchText)?.length === 0){
+            <div class="d-flex flex-column align-items-center pt-5">
+                <div>
+                    <img src="noresult.png" alt="noresult.png" class="img-fluid" style="height: 80px;">
+                </div>
+                <div>
+                    <small class="text-muted">No match found!</small>
+                </div>
+            </div>
+        }
+        <div class="grid flex-grow-1" cdkScrollable>
+            @if (logs$ | async | filterBy:['filename']:searchText; as logs) {
+                @for (log of logs; track log; let i = $index) {
+                    <a role="button" class="card p-2 border-0 text-decoration-none position-relative" [ngClass]="{'selected': log.filename === selectedLog}"
+                    (click)="select(log.filename)"
+                    (dblclick)="route2ViewLog(log)" 
+                    (mouseenter)="hoveredIndex = i" 
+                    (mouseleave)="hoveredIndex = -1">
+                        <img [src]="log.filename.endsWith('.log') ? 'log.png' : 'gzip.png'" [alt]="'log.png'" width="84" class="mx-auto">
+                        <p>{{log.filename}}</p>
+                        @if (hoveredIndex === i) {
+                            <div class="position-absolute top-0 end-0 p-0 m-0">
+                                <div ngbDropdown>
+                                    <button type="button" class="btn button border-0" ngbDropdownToggle>
+                                        <i class="las la-ellipsis-h fs-5 fw-bold"></i>
+                                    </button>
+                                    <div ngbDropdownMenu>
+                                        @if(log.filename.endsWith('.log')){
+                                            <button ngbDropdownItem (click)="route2ViewLog(log)"><i class="las la-eye"></i> View Log</button>
+                                            <div class="dropdown-divider"></div>
+                                        }
+                                        <button ngbDropdownItem><i class="las la-download"></i> Download</button>
+                                        <div class="dropdown-divider"></div>
+                                        <button ngbDropdownItem (click)="deleteLog(log)"><i class="las la-trash"></i> Delete</button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </a>
+                }
+            }@else {
+                <div class="mx-auto align-items-center">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+

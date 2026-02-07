@@ -1,1 +1,9 @@
 /* You can add global styles to this file, and also import other style files */
+
+@use 'bootstrap/scss/bootstrap' as *;
+@use "line-awesome/dist/line-awesome/scss/line-awesome.scss" as *;
+@use 'ngx-toastr/toastr' as *;
+html,body{
+    height: 100%;
+    font-size: 14px;
+}
