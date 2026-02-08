@@ -43,7 +43,14 @@ export class LogsComponent implements OnInit {
                 .sort((a:{id:string}, b:{id:string}) => {
                     if (a.id === 'assessment.log') return -1; 
                     if (b.id === 'assessment.log') return 1;
-                    return 0; 
+
+                    const dateA = a.id.match(/\d{4}-\d{2}-\d{2}/)?.[0];
+                    const dateB = b.id.match(/\d{4}-\d{2}-\d{2}/)?.[0];
+                    if (!dateA && !dateB) return 0;
+                    if (!dateA) return 1;
+                    if (!dateB) return -1;
+
+                    return dateB.localeCompare(dateA); 
                 });
                 this.logSubject.next(logItems);
                 this.loading.set(false);
@@ -55,7 +62,6 @@ export class LogsComponent implements OnInit {
             }
         })
     }
-
 
     public select(filename:string){
         this.selectedLog = filename;

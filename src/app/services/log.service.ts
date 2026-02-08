@@ -18,11 +18,8 @@ export class LogService {
     .pipe(catchError((error:HttpErrorResponse) => this.handleError(error)));
   }
 
-  readLog(file: string, tail = 2000) {
-    return this.http.get<ApiResponse<any>>(
-      `${this.endpoint}/logs/${file}`,
-      { params: { tail } }
-    )
+  readLog(file: string, tail = 3000) {
+    return this.http.get<ApiResponse<any>>(`${this.endpoint}/logs/${file}`, { params: { tail } })
     .pipe(catchError((error:HttpErrorResponse) => this.handleError(error)));
   }
 

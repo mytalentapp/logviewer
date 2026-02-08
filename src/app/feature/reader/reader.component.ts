@@ -47,7 +47,7 @@ export class ReaderComponent implements OnInit {
   private loadLogContent(filename: string): void {
     this.content = '// Loading log content...';
 
-    this.logService.readLog(filename).subscribe({
+    this.logService.readLog(filename, 3000).subscribe({
       next: ({ data }) => {
         if (this.editorReady) {
           this.content = data;
