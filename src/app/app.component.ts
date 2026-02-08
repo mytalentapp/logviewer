@@ -13,6 +13,9 @@ export class AppComponent implements OnInit{
   title = 'logviewer';
 
   ngOnInit(): void {
-    // sessionStorage.setItem('env', JSON.stringify('https://uat.mytalentinc.com/assessments/api/v1'))
+     const env = JSON.parse(sessionStorage.getItem('env')!);
+     if(!env){
+      sessionStorage.setItem('env', JSON.stringify('https://uat.mytalentinc.com/assessments/api/v1'))
+     }
   }
 }
