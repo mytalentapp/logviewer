@@ -1,9 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { CrudService } from '@app/services/crud.service';
 import { LogService } from '@app/services/log.service';
 import { MonacoEditorModule } from 'ngx-monaco-editor-v2';
-import { filter, take, tap } from 'rxjs/operators';
 import * as monaco from 'monaco-editor';
 import { ActivatedRoute } from '@angular/router';
 
@@ -23,12 +21,14 @@ export class ReaderComponent implements OnInit {
   private editorReady = false;
   eventSource?: EventSource;
   public selectedLog!:string;
+  editor?: monaco.editor.IStandaloneCodeEditor;
 
   editorOptions = {
     theme: 'vs',
     language: 'csharp',
-    automaticLayout: true,
     minimap: { enabled: false },
+    automaticLayout: true,
+    scrollBeyondLastLine: false,
     readOnly: true
   };
 
@@ -40,6 +40,7 @@ export class ReaderComponent implements OnInit {
   }
 
   onEditorInit(editor: monaco.editor.IStandaloneCodeEditor): void {
+    this.editor = editor;
     this.editorReady = true;
     this.content = `${this.content}`;
   }
@@ -47,7 +48,7 @@ export class ReaderComponent implements OnInit {
   private loadLogContent(filename: string): void {
     this.content = '// Loading log content...';
 
-    this.logService.readLog(filename, 3000).subscribe({
+    this.logService.readLog(filename).subscribe({
       next: ({ data }) => {
         if (this.editorReady) {
           this.content = data;
