@@ -64,7 +64,7 @@ export class HeaderComponent implements OnInit{
 
     if(env.includes('uat')){
       this.labelEnv = 'PROD';
-      sessionStorage.setItem('env', JSON.stringify('https://prod.mytalentinc.com/assessments/api/v1'))
+      sessionStorage.setItem('env', JSON.stringify('https://api.mytalentinc.com/assessments/api/v1'))
     }else{
       this.labelEnv = 'UAT';
       sessionStorage.setItem('env', JSON.stringify('https://uat.mytalentinc.com/assessments/api/v1'))
