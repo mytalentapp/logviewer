@@ -76,6 +76,7 @@ export class LogsComponent implements OnInit {
   }
 
   public downloadLog(log:{filename:string}){
+    console.log('loggin......', log)
     this.logService.downloadLog(log.filename)
     .subscribe({
         next: (blob) => {
