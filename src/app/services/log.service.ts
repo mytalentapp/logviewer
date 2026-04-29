@@ -27,6 +27,16 @@ export class LogService {
     return new EventSource(`${this.endpoint}/logs/stream/${file}`);
   }
 
+  downloadLog(file: string) {
+    return this.http.get(`${this.endpoint}/logs/download?filename=${file}`, { responseType: 'blob' })
+    .pipe(catchError((error:HttpErrorResponse) => this.handleError(error)));
+  }
+
+  deleteLog(file: string) {
+    return this.http.delete(`${this.endpoint}/logs?filename=${file}`)
+    .pipe(catchError((error:HttpErrorResponse) => this.handleError(error)));
+  }
+
   public handleError(error: HttpErrorResponse): Observable<never> {
     const errorMessage = error.error?.message || 'Something went wrong; please try again later.';
     return throwError(() => new Error(errorMessage));

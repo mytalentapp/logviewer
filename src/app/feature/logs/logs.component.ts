@@ -75,6 +75,39 @@ export class LogsComponent implements OnInit {
     }
   }
 
+  public downloadLog(log:{filename:string}){
+    this.logService.downloadLog(log.filename)
+    .subscribe({
+        next: (blob) => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = log.filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        },
+        error: (err) => {
+            console.error('Error downloading log:', err);
+            this.error.set('Failed to download log. Please try again later.');
+        }
+    });
+  }
+
   public deleteLog(log:{filename:string}){
+    if (confirm(`Are you sure you want to delete ${log.filename}?`)) {
+        this.logService.deleteLog(log.filename)
+        .subscribe({
+            next: () => {
+                const updatedLogs = this.logSubject.getValue().filter(l => l.filename !== log.filename);
+                this.logSubject.next(updatedLogs);
+            },
+            error: (err) => {
+                console.error('Error deleting log:', err);
+                this.error.set('Failed to delete log. Please try again later.');
+            }
+        });
+    }
   }
 }
