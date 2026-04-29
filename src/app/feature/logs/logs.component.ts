@@ -75,9 +75,9 @@ export class LogsComponent implements OnInit {
     }
   }
 
-  public downloadLog(log:{filename:string}){
+  public downloadLog(log:{id:string, filename:string}){
     console.log('loggin......', log)
-    this.logService.downloadLog(log.filename)
+    this.logService.downloadLog(log.id)
     .subscribe({
         next: (blob) => {
             const url = window.URL.createObjectURL(blob);
