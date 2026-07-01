@@ -27,6 +27,8 @@ export class HeaderComponent implements OnInit{
     const env = JSON.parse(sessionStorage.getItem('env')!);
     if(env.includes('uat')){
       this.labelEnv = 'UAT';
+    }else if(env.includes('test')){
+      this.labelEnv = 'TEST';
     }else{
       this.labelEnv = 'PROD';
     }
@@ -62,9 +64,12 @@ export class HeaderComponent implements OnInit{
       this.labelEnv = 'UAT';
     }
 
-    if(env.includes('uat')){
+    if(env.includes('prod')){
       this.labelEnv = 'PROD';
       sessionStorage.setItem('env', JSON.stringify('https://api.mytalentinc.com/assessments/api/v1'))
+    }else if(env.includes('test')){
+      this.labelEnv = 'TEST';
+      sessionStorage.setItem('env', JSON.stringify('https://test.mytalentinc.com/assessments/api/v1'))
     }else{
       this.labelEnv = 'UAT';
       sessionStorage.setItem('env', JSON.stringify('https://uat.mytalentinc.com/assessments/api/v1'))
