@@ -28,7 +28,7 @@ export class HeaderComponent implements OnInit{
     if(env.includes('uat')){
       this.labelEnv = 'UAT';
     }else{
-      this.labelEnv = 'PROD';
+      this.labelEnv = 'DEMO';
     }
   }
 
@@ -63,7 +63,7 @@ export class HeaderComponent implements OnInit{
     }
 
     if(env.includes('uat')){
-      this.labelEnv = 'PROD';
+      this.labelEnv = 'DEMO';
       sessionStorage.setItem('env', JSON.stringify('https://api.mytalentinc.com/assessments/api/v1'))
     }else{
       this.labelEnv = 'UAT';
