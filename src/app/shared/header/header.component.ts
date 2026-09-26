@@ -60,12 +60,6 @@ export class HeaderComponent implements OnInit{
   }
 
   switchEnv(appEnv:string){
-    // const env = JSON.parse(sessionStorage.getItem('env')!);
-    // if(!env){
-    //   sessionStorage.setItem('env', JSON.stringify('https://uat.mytalentinc.com/assessments/api/v1'))
-    //   this.labelEnv = 'UAT';
-    // }
-
     switch(appEnv){
       case 'uat':
           sessionStorage.setItem('env', JSON.stringify('https://uat.mytalentinc.com/assessments/api/v1'))
