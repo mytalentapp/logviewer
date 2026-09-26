@@ -55,19 +55,29 @@ export class HeaderComponent implements OnInit{
     }
   }
 
-  switchEnv(){
-    const env = JSON.parse(sessionStorage.getItem('env')!);
-    if(!env){
-      sessionStorage.setItem('env', JSON.stringify('https://uat.mytalentinc.com/assessments/api/v1'))
-      this.labelEnv = 'UAT';
-    }
+  switchEnv(appEnv:string){
+    // const env = JSON.parse(sessionStorage.getItem('env')!);
+    // if(!env){
+    //   sessionStorage.setItem('env', JSON.stringify('https://uat.mytalentinc.com/assessments/api/v1'))
+    //   this.labelEnv = 'UAT';
+    // }
 
-    if(env.includes('uat')){
-      this.labelEnv = 'DEMO';
-      sessionStorage.setItem('env', JSON.stringify('https://api.mytalentinc.com/assessments/api/v1'))
-    }else{
-      this.labelEnv = 'UAT';
-      sessionStorage.setItem('env', JSON.stringify('https://uat.mytalentinc.com/assessments/api/v1'))
+    switch(appEnv){
+      case 'uat':
+          sessionStorage.setItem('env', JSON.stringify('https://uat.mytalentinc.com/assessments/api/v1'))
+          this.labelEnv = 'UAT';
+        break;
+        case 'demo':
+          sessionStorage.setItem('env', JSON.stringify('https://api.mytalentinc.com/assessments/api/v1'))
+          this.labelEnv = 'DEMO/STG';
+        break;
+        case 'prod':
+          sessionStorage.setItem('env', JSON.stringify('https://api.mynaturaltalents.com/assessments/api/v1'))
+          this.labelEnv = 'PROD';
+          break;
+        default:
+          sessionStorage.setItem('env', JSON.stringify('https://uat.mytalentinc.com/assessments/api/v1'))
+          this.labelEnv = 'UAT';
     }
     window.location.reload();
   }
