@@ -25,10 +25,14 @@ export class HeaderComponent implements OnInit{
   
   ngOnInit(): void {
     const env = JSON.parse(sessionStorage.getItem('env')!);
-    if(env.includes('uat')){
+    if(env.includes('uat.mytalentinc.com')){
       this.labelEnv = 'UAT';
+    }else if(env.includes('api.mytalentinc.com')){
+      this.labelEnv = 'DEMO/STG';
+    }else if(env.includes('api.mynaturaltalents.com')){
+      this.labelEnv = 'PROD';
     }else{
-      this.labelEnv = 'DEMO';
+      this.labelEnv = 'UAT';
     }
   }
 
