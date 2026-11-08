@@ -1,10 +1,68 @@
-<div class="editor-container">
+<div class="reader">
+  <div class="toolbar d-flex flex-wrap align-items-center gap-2 mb-2">
+    <a routerLink="/" class="btn btn-sm btn-outline-secondary" title="Back to logs"><i class="las la-arrow-left"></i></a>
+    <div class="me-auto min-w-0">
+      <div class="fw-semibold text-truncate" [title]="file()">{{ file() }}</div>
+      <div class="small text-muted">
+        {{ lineCount() | number }} lines
+        @if (live() !== 'off') {
+          · <span class="live-status" [class]="'state-' + live()">
+              <span class="dot"></span>{{ liveMessage() }}
+            </span>
+        }
+      </div>
+    </div>
+
+    <label class="small text-muted d-flex align-items-center gap-1">
+      Last
+      <select class="form-select form-select-sm w-auto" [ngModel]="tail()" (ngModelChange)="changeTail($event)" aria-label="Lines to show">
+        @for (n of tailOptions; track n) { <option [ngValue]="n">{{ n | number }}</option> }
+      </select>
+      lines
+    </label>
+
+    <div class="btn-group btn-group-sm">
+      <button type="button" class="btn"
+              [class.btn-success]="live() === 'live'"
+              [class.btn-warning]="live() === 'connecting' || live() === 'reconnecting'"
+              [class.btn-outline-success]="live() === 'off' || live() === 'error'"
+              (click)="toggleLive()" [attr.aria-pressed]="live() !== 'off' && live() !== 'error'"
+              title="Follow new lines as they are written">
+        <i class="las" [class.la-broadcast-tower]="live() === 'off' || live() === 'error'" [class.la-stop]="live() !== 'off' && live() !== 'error'"></i>
+        {{ live() === 'off' || live() === 'error' ? 'Live' : 'Stop' }}
+      </button>
+      <button type="button" class="btn btn-outline-secondary" (click)="load()"
+              [disabled]="loading() || (live() !== 'off' && live() !== 'error')" title="Reload">
+        <i class="las la-sync" [class.spin]="loading()"></i>
+      </button>
+    </div>
+
+    <div class="btn-group btn-group-sm">
+      <button type="button" class="btn btn-outline-secondary" (click)="find()" title="Find (Ctrl+F)"><i class="las la-search"></i></button>
+      <button type="button" class="btn" [class.btn-secondary]="wrap()" [class.btn-outline-secondary]="!wrap()"
+              (click)="toggleWrap()" title="Wrap long lines"><i class="las la-paragraph"></i></button>
+      <button type="button" class="btn btn-outline-secondary" (click)="download()" title="Download"><i class="las la-download"></i></button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger py-2 d-flex align-items-center gap-2">
+      <i class="las la-exclamation-triangle"></i>
+      <span class="me-auto">{{ error() }}</span>
+      <button class="btn btn-sm btn-outline-danger" (click)="load()">Retry</button>
+    </div>
+  }
+
   <div class="editor-wrapper">
-    <ngx-monaco-editor 
-      class="script-editor" 
-      [options]="editorOptions" 
-      [(ngModel)]="content"
-      (onInit)="onEditorInit($event)">
-    </ngx-monaco-editor>
+    @if (loading()) {
+      <div class="loading-bar"></div>
+    }
+    <ngx-monaco-editor class="script-editor" [options]="editorOptions" (onInit)="onEditorInit($event)" />
+
+    @if (!follow() && newLines() > 0) {
+      <button type="button" class="btn btn-sm btn-primary jump shadow" (click)="jumpToEnd()">
+        <i class="las la-arrow-down"></i> {{ newLines() | number }} new line{{ newLines() === 1 ? '' : 's' }}
+      </button>
+    }
   </div>
 </div>

@@ -1,75 +1,329 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LogService } from '@app/services/log.service';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MonacoEditorModule } from 'ngx-monaco-editor-v2';
-import * as monaco from 'monaco-editor';
-import { ActivatedRoute } from '@angular/router';
+import type * as Monaco from 'monaco-editor';
+import { Subscription } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ToastrService } from 'ngx-toastr';
+import { LogService, LogStreamEvent } from '@app/services/log.service';
+
+type LiveState = 'off' | 'connecting' | 'live' | 'reconnecting' | 'error';
+
+/** Lines kept in the editor while live; older ones are dropped from the top. */
+const MAX_LIVE_LINES = 20000;
 
 @Component({
   selector: 'myt-reader',
   standalone: true,
-  imports: [MonacoEditorModule, FormsModule],
+  imports: [MonacoEditorModule, FormsModule, RouterLink, DecimalPipe],
   templateUrl: './reader.component.html',
-  styleUrls: ['./reader.component.scss']
+  styleUrls: ['./reader.component.scss'],
 })
-export class ReaderComponent implements OnInit {
-  private logService = inject(LogService);
-  private route = inject(ActivatedRoute);
+export class ReaderComponent implements OnInit, OnDestroy {
+  private readonly logService = inject(LogService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly toastr = inject(ToastrService);
+  private readonly destroyRef = inject(DestroyRef);
 
-  content = '// Editor is initialised...';
+  readonly tailOptions = [500, 1000, 2000, 5000];
 
-  private editorReady = false;
-  eventSource?: EventSource;
-  public selectedLog!:string;
-  editor?: monaco.editor.IStandaloneCodeEditor;
+  readonly file = signal('');
+  readonly tail = signal(2000);
+  readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
+  readonly live = signal<LiveState>('off');
+  readonly liveMessage = signal('');
+  readonly follow = signal(true);
+  readonly wrap = signal(false);
+  readonly lineCount = signal(0);
+  readonly newLines = signal(0);
 
-  editorOptions = {
-    theme: 'vs',
-    language: 'csharp',
+  private editor?: Monaco.editor.IStandaloneCodeEditor;
+  private pendingText: string | null = null;
+  private loadSub?: Subscription;
+  private streamSub?: Subscription;
+
+  readonly editorOptions: Monaco.editor.IStandaloneEditorConstructionOptions = {
+    theme: 'log-light',
+    language: 'log',
+    readOnly: true,
     minimap: { enabled: false },
     automaticLayout: true,
     scrollBeyondLastLine: false,
-    readOnly: true
+    wordWrap: 'off',
+    renderWhitespace: 'none',
+    fontSize: 13,
+    lineNumbersMinChars: 6,
+    folding: false,
+    stickyScroll: { enabled: false },
   };
 
   ngOnInit(): void {
-    this.route.queryParams.subscribe(params => {
-        const id = params['id'];
-        this.loadLogContent(id)
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      // "id" is what older links used.
+      const file = params.get('file') ?? params.get('id') ?? '';
+      if (!file) {
+        this.router.navigate(['/']);
+        return;
+      }
+      this.stopLive();
+      this.file.set(file);
+      if (params.has('live')) this.startLive();
+      else this.load();
     });
+    this.destroyRef.onDestroy(() => this.stopLive());
   }
 
-  onEditorInit(editor: monaco.editor.IStandaloneCodeEditor): void {
+  ngOnDestroy(): void {
+    this.loadSub?.unsubscribe();
+    this.stopLive();
+  }
+
+  onEditorInit(editor: Monaco.editor.IStandaloneCodeEditor): void {
     this.editor = editor;
-    this.editorReady = true;
-    this.content = `${this.content}`;
-  }
+    registerLogLanguage();
+    const model = editor.getModel();
+    const monaco = monacoGlobal();
+    if (model && monaco) monaco.editor.setModelLanguage(model, 'log');
+    monaco?.editor.setTheme('log-light');
 
-  private loadLogContent(filename: string): void {
-    this.content = '// Loading log content...';
-
-    this.logService.readLog(filename).subscribe({
-      next: ({ data }) => {
-        if (this.editorReady) {
-          this.content = data;
-        } else {
-          setTimeout(() => this.content = data);
-        }
-      },
-      error: (err) => {
-        this.content =
-          `// Error loading log\n` +
-          `// ${err?.message || err}`;
+    // Scrolling up pauses follow mode; scrolling back to the bottom resumes it.
+    editor.onDidScrollChange(e => {
+      if (!e.scrollTopChanged) return;
+      const atBottom = e.scrollTop + editor.getLayoutInfo().height >= e.scrollHeight - 30;
+      if (atBottom && !this.follow()) {
+        this.follow.set(true);
+        this.newLines.set(0);
+      } else if (!atBottom && this.follow() && this.live() !== 'off') {
+        this.follow.set(false);
       }
     });
+
+    if (this.pendingText !== null) {
+      this.setText(this.pendingText);
+      this.pendingText = null;
+    }
   }
 
-  startStreaming() {
-    this.eventSource?.close();
-    this.eventSource = this.logService.streamLog('assessment.log');
+  // ---- static read -------------------------------------------------------
 
-    this.eventSource.onmessage = (e) => {
-        this.content += '\n' + e.data;
-    };
+  load(): void {
+    this.loadSub?.unsubscribe();
+    this.loading.set(true);
+    this.error.set(null);
+    this.loadSub = this.logService.readLog(this.file(), this.tail()).subscribe({
+      next: text => {
+        this.setText(text);
+        this.loading.set(false);
+      },
+      error: (err: Error) => {
+        this.error.set(err.message);
+        this.loading.set(false);
+      },
+    });
+  }
+
+  changeTail(value: number): void {
+    this.tail.set(Number(value));
+    if (this.live() !== 'off') {
+      this.stopLive();
+      this.startLive();
+    } else {
+      this.load();
     }
+  }
+
+  // ---- live stream -------------------------------------------------------
+
+  toggleLive(): void {
+    if (this.live() === 'off' || this.live() === 'error') this.startLive();
+    else this.stopLive();
+  }
+
+  startLive(): void {
+    this.loadSub?.unsubscribe();
+    this.stopLive();
+    this.error.set(null);
+    this.live.set('connecting');
+    this.liveMessage.set('Connecting…');
+    this.follow.set(true);
+    let firstConnect = true;
+
+    this.streamSub = this.logService.streamLog(this.file(), this.tail()).subscribe({
+      next: (e: LogStreamEvent) => {
+        switch (e.type) {
+          case 'connected':
+            if (firstConnect) {
+              // The server sends the last N lines next, so start from a clean slate.
+              this.setText('');
+              firstConnect = false;
+            }
+            this.live.set('live');
+            this.liveMessage.set('Live');
+            break;
+          case 'lines':
+            this.append(e.text);
+            break;
+          case 'rotated':
+            this.append('──────── log file rotated ────────');
+            break;
+          case 'reconnecting':
+            this.live.set('reconnecting');
+            this.liveMessage.set(`Connection lost, retrying in ${Math.round(e.delayMs / 1000)}s…`);
+            break;
+          case 'error':
+            this.live.set('error');
+            this.liveMessage.set(e.message);
+            if (e.fatal) this.toastr.error(e.message, 'Live stream stopped');
+            break;
+        }
+      },
+      complete: () => {
+        if (this.live() !== 'error') this.live.set('off');
+      },
+    });
+  }
+
+  stopLive(): void {
+    this.streamSub?.unsubscribe();
+    this.streamSub = undefined;
+    if (this.live() !== 'error') this.live.set('off');
+    this.newLines.set(0);
+  }
+
+  // ---- view controls -----------------------------------------------------
+
+  toggleWrap(): void {
+    this.wrap.update(w => !w);
+    this.editor?.updateOptions({ wordWrap: this.wrap() ? 'on' : 'off' });
+  }
+
+  jumpToEnd(): void {
+    this.follow.set(true);
+    this.newLines.set(0);
+    this.scrollToEnd();
+  }
+
+  find(): void {
+    this.editor?.focus();
+    this.editor?.getAction('actions.find')?.run();
+  }
+
+  download(): void {
+    this.logService.downloadLog(this.file()).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = this.file();
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      },
+      error: (err: Error) => this.toastr.error(err.message, 'Download failed'),
+    });
+  }
+
+  // ---- editor helpers ----------------------------------------------------
+
+  private setText(text: string): void {
+    if (!this.editor) {
+      this.pendingText = text;
+      return;
+    }
+    this.editor.setValue(text);
+    this.lineCount.set(text ? this.editor.getModel()?.getLineCount() ?? 0 : 0);
+    this.newLines.set(0);
+    this.scrollToEnd();
+  }
+
+  private append(text: string): void {
+    if (!text) return;
+    const model = this.editor?.getModel();
+    if (!this.editor || !model) {
+      this.pendingText = (this.pendingText ? this.pendingText + '\n' : '') + text;
+      return;
+    }
+    const monaco = monacoGlobal();
+    if (!monaco) return;
+
+    const empty = model.getValueLength() === 0;
+    const lastLine = model.getLineCount();
+    const lastCol = model.getLineMaxColumn(lastLine);
+    model.applyEdits([{
+      range: new monaco.Range(lastLine, lastCol, lastLine, lastCol),
+      text: empty ? text : '\n' + text,
+    }]);
+
+    const overflow = model.getLineCount() - MAX_LIVE_LINES;
+    if (overflow > 0) {
+      model.applyEdits([{ range: new monaco.Range(1, 1, overflow + 1, 1), text: '' }]);
+    }
+
+    const added = text.split('\n').length;
+    this.lineCount.set(model.getLineCount());
+    if (this.follow()) this.scrollToEnd();
+    else this.newLines.update(n => n + added);
+  }
+
+  private scrollToEnd(): void {
+    const editor = this.editor;
+    const model = editor?.getModel();
+    if (!editor || !model) return;
+    editor.revealLine(model.getLineCount(), 1 /* Immediate */);
+  }
+}
+
+// ---- Monaco "log" language ------------------------------------------------
+
+function monacoGlobal(): typeof Monaco | undefined {
+  return (window as unknown as { monaco?: typeof Monaco }).monaco;
+}
+
+let logLanguageRegistered = false;
+
+/** Highlights timestamps, levels, exceptions and stack frames in Spring/logback output. */
+function registerLogLanguage(): void {
+  const monaco = monacoGlobal();
+  if (!monaco || logLanguageRegistered) return;
+  logLanguageRegistered = true;
+
+  monaco.languages.register({ id: 'log' });
+  monaco.languages.setMonarchTokensProvider('log', {
+    tokenizer: {
+      root: [
+        [/\b(ERROR|FATAL|SEVERE|ERR)\b/, 'log-error'],
+        [/\b(WARN|WARNING|WRN)\b/, 'log-warn'],
+        [/\b(INFO|INF)\b/, 'log-info'],
+        [/\b(DEBUG|DBG|TRACE|TRC)\b/, 'log-debug'],
+        [/^\s+at\s.*$/, 'log-stack'],
+        [/^\s*\.\.\. \d+ (more|common frames omitted)$/, 'log-stack'],
+        [/\b[\w.$]+(Exception|Error)\b/, 'log-exception'],
+        [/^Caused by:.*$/, 'log-exception'],
+        [/\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}([.,]\d+)?(Z|[+-]\d{2}:?\d{2})?/, 'log-date'],
+        [/\[[^\]\s]{1,60}\]/, 'log-thread'],
+        [/\bhttps?:\/\/\S+/, 'log-url'],
+        [/\b\d+(\.\d+)?(ms|s)\b/, 'log-number'],
+      ],
+    },
+  });
+  monaco.editor.defineTheme('log-light', {
+    base: 'vs',
+    inherit: true,
+    rules: [
+      { token: 'log-error', foreground: 'd32f2f', fontStyle: 'bold' },
+      { token: 'log-warn', foreground: 'b26a00', fontStyle: 'bold' },
+      { token: 'log-info', foreground: '1565c0' },
+      { token: 'log-debug', foreground: '808080' },
+      { token: 'log-exception', foreground: 'c2185b', fontStyle: 'bold' },
+      { token: 'log-stack', foreground: '9e5b5b' },
+      { token: 'log-date', foreground: '2e7d32' },
+      { token: 'log-thread', foreground: '6a1b9a' },
+      { token: 'log-url', foreground: '00838f', fontStyle: 'underline' },
+      { token: 'log-number', foreground: '00796b' },
+    ],
+    colors: {},
+  });
 }

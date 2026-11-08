@@ -1,20 +1,20 @@
-import { ApplicationConfig, importProvidersFrom, provideZoneChangeDetection } from '@angular/core';
-import { PreloadAllModules, provideRouter, withPreloading } from '@angular/router';
-import { provideToastr } from 'ngx-toastr';
-
-import { routes } from './app.routes';
+import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
-import { provideClientHydration, BrowserModule } from '@angular/platform-browser';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideToastr } from 'ngx-toastr';
 import { provideMonacoEditor } from 'ngx-monaco-editor-v2';
 
+import { routes } from './app.routes';
+import { authInterceptor } from './services/auth.interceptor';
+
 export const appConfig: ApplicationConfig = {
-    providers: [
-    provideRouter(routes, withPreloading(PreloadAllModules)),
-    provideHttpClient(withFetch()),
-    provideClientHydration(),
-    provideToastr({ timeOut: 4000, preventDuplicates: true }),
-    provideZoneChangeDetection({ eventCoalescing: true }), provideRouter(routes),
-    importProvidersFrom([BrowserModule]),
-    provideMonacoEditor() 
-  ]
+  providers: [
+    provideZoneChangeDetection({ eventCoalescing: true }),
+    provideRouter(routes, withComponentInputBinding()),
+    provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
+    provideAnimations(),
+    provideToastr({ timeOut: 4000, preventDuplicates: true, positionClass: 'toast-bottom-right' }),
+    provideMonacoEditor(),
+  ],
 };

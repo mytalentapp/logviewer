@@ -1,18 +1,62 @@
-.editor-container {
-  padding: 1rem;
-  height: 90vh;               
+.reader {
+  height: calc(100vh - 100px);
   display: flex;
   flex-direction: column;
 }
 
+.min-w-0 { min-width: 0; }
+
 .editor-wrapper {
-  flex: 1;                     
-  border: 1px solid #ddd;     
-  background: #f8f8f8;
-  min-height: 300px;           
+  position: relative;
+  flex: 1;
+  min-height: 300px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
 }
 
 .script-editor {
+  display: block;
   width: 100%;
-  height: 100% !important;    
+  height: 100% !important;
 }
+
+.jump {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+}
+
+.loading-bar {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  z-index: 5;
+  background: linear-gradient(90deg, transparent, #c31432, transparent);
+  background-size: 50% 100%;
+  background-repeat: no-repeat;
+  animation: slide 1s linear infinite;
+}
+
+.live-status {
+  .dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 4px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  &.state-live { color: #198754; .dot { animation: pulse 1.5s ease-in-out infinite; } }
+  &.state-connecting, &.state-reconnecting { color: #b26a00; }
+  &.state-error { color: #dc3545; }
+}
+
+.spin { animation: spin 1s linear infinite; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 50% { opacity: 0.3; } }
+@keyframes slide { from { background-position: -50% 0; } to { background-position: 150% 0; } }

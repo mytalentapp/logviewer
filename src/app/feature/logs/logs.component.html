@@ -1,73 +1,70 @@
-<div>
-    @if ((logs$ | async)?.length !== 0 && !loading() && !error()) {
-        <div class="d-flex justify-content-between align-items-center py-2">
-            <input type="text" class="form-control ms-2" [(ngModel)]="searchText" placeholder="Search something...">
-        </div>
-    }
-    @if (loading()) {
-        <skeleton-loader [count]="4"/>
-    }@else if (error()) {
-        <div class="alert alert-danger ms-2 mt-3">
-        <p>{{ error() }}</p>
-        </div>
-    }@else if ((logs$ | async)?.length === 0 && !loading() && !error()) {
-        <div class="no-logs">
-            <div>
-                <img src="noresult.png" alt="noresult.png" class="img-fluid" style="height: 80px;">
-            </div>
-            <div class="d-flex flex-column align-items-center">
-                <small class="text-muted">No logs available</small>
-            </div>
-        </div>
-    }@else {
-        @if((logs$ | async | filterBy:['filename']:searchText)?.length === 0){
-            <div class="d-flex flex-column align-items-center pt-5">
-                <div>
-                    <img src="noresult.png" alt="noresult.png" class="img-fluid" style="height: 80px;">
-                </div>
-                <div>
-                    <small class="text-muted">No match found!</small>
-                </div>
-            </div>
-        }
-        <div class="grid flex-grow-1" cdkScrollable>
-            @if (logs$ | async | filterBy:['filename']:searchText; as logs) {
-                @for (log of logs; track log; let i = $index) {
-                    <a role="button" class="card p-2 border-0 text-decoration-none position-relative" [ngClass]="{'selected': log.filename === selectedLog}"
-                    (click)="select(log.filename)"
-                    (dblclick)="route2ViewLog(log)" 
-                    (mouseenter)="hoveredIndex = i" 
-                    (mouseleave)="hoveredIndex = -1">
-                        <img [src]="log.filename.endsWith('.log') ? 'log.png' : 'gzip.png'" [alt]="'log.png'" width="84" class="mx-auto">
-                        <p>{{log.filename}}</p>
-                        @if (hoveredIndex === i) {
-                            <div class="position-absolute top-0 end-0 p-0 m-0">
-                                <div ngbDropdown>
-                                    <button type="button" class="btn button border-0" ngbDropdownToggle>
-                                        <i class="las la-ellipsis-h fs-5 fw-bold"></i>
-                                    </button>
-                                    <div ngbDropdownMenu>
-                                        @if(log.filename.endsWith('.log')){
-                                            <button ngbDropdownItem (click)="route2ViewLog(log)"><i class="las la-eye"></i> View Log</button>
-                                            <div class="dropdown-divider"></div>
-                                        }
-                                        <button ngbDropdownItem (click)="downloadLog(log)"><i class="las la-download"></i> Download</button>
-                                        <div class="dropdown-divider"></div>
-                                        <button ngbDropdownItem (click)="deleteLog(log)"><i class="las la-trash"></i> Delete</button>
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                    </a>
-                }
-            }@else {
-                <div class="mx-auto align-items-center">
-                    <div class="spinner-border spinner-border-sm text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                </div>
-            }
-        </div>
-    }
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+  <h1 class="h5 mb-0 me-auto">Server logs
+    @if (!loading() && !error()) { <span class="badge text-bg-light ms-1">{{ logs().length }}</span> }
+  </h1>
+  <div class="input-group search">
+    <span class="input-group-text bg-white"><i class="las la-search"></i></span>
+    <input type="search" class="form-control" placeholder="Filter files…" aria-label="Filter files"
+           [ngModel]="search()" (ngModelChange)="search.set($event)">
+  </div>
+  <button type="button" class="btn btn-outline-secondary" (click)="load()" [disabled]="loading()" title="Refresh list">
+    <i class="las la-sync" [class.spin]="loading()"></i>
+  </button>
 </div>
 
+@if (loading() && logs().length === 0) {
+  <skeleton-loader [count]="4" />
+} @else if (error()) {
+  <div class="alert alert-danger d-flex align-items-center gap-3">
+    <i class="las la-exclamation-triangle fs-4"></i>
+    <div class="me-auto">{{ error() }}</div>
+    <button class="btn btn-sm btn-outline-danger" (click)="load()">Try again</button>
+  </div>
+} @else if (logs().length === 0) {
+  <div class="empty">
+    <img src="noresult.png" alt="" height="80">
+    <small class="text-muted">No log files on this server</small>
+  </div>
+} @else if (filtered().length === 0) {
+  <div class="empty">
+    <img src="noresult.png" alt="" height="80">
+    <small class="text-muted">No file matches “{{ search() }}”</small>
+  </div>
+} @else {
+  <div class="grid">
+    @for (log of filtered(); track log.id) {
+      <div class="card file border-0 shadow-sm" [class.current]="log.isCurrent"
+           role="button" tabindex="0" [title]="log.id"
+           (dblclick)="open(log)" (keydown.enter)="open(log)">
+        <div class="card-body p-2 text-center">
+          <img [src]="log.isArchive ? 'gzip.png' : 'log.png'" alt="" width="64" class="mb-2">
+          <div class="name text-truncate">{{ log.label }}</div>
+          <div class="small text-muted">
+            @if (log.isCurrent) { <span class="badge text-bg-success">current</span> }
+            @else if (log.isArchive) { archive }
+            @else { log }
+          </div>
+        </div>
+
+        <div class="actions" ngbDropdown container="body" placement="bottom-end" (dblclick)="$event.stopPropagation()">
+          <button type="button" class="btn btn-sm btn-light border-0" ngbDropdownToggle aria-label="File actions"
+                  [disabled]="busy() === log.id" (click)="$event.stopPropagation()">
+            @if (busy() === log.id) { <span class="spinner-border spinner-border-sm"></span> }
+            @else { <i class="las la-ellipsis-h fs-5"></i> }
+          </button>
+          <div ngbDropdownMenu>
+            @if (!log.isArchive) {
+              <button ngbDropdownItem (click)="open(log)"><i class="las la-eye"></i> View</button>
+              <button ngbDropdownItem (click)="open(log, true)"><i class="las la-broadcast-tower"></i> View live</button>
+              <div class="dropdown-divider"></div>
+            }
+            <button ngbDropdownItem (click)="download(log)"><i class="las la-download"></i> Download</button>
+            <div class="dropdown-divider"></div>
+            <button ngbDropdownItem class="text-danger" (click)="remove(log)"><i class="las la-trash"></i> Delete</button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+  <p class="text-muted small mt-3 mb-0">Double-click a file (or press Enter) to open it. Archives download.</p>
+}

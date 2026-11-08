@@ -1,46 +1,60 @@
-<nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow-sm">
+<nav class="navbar navbar-expand-md navbar-dark fixed-top shadow-sm">
   <div class="container-fluid">
-    <button class="btn btn-glass-dark text-white d-block d-md-none" type="button" (click)="toggleNavbar()" #navbarToggler
+    <a class="navbar-brand fw-semibold d-flex align-items-center gap-2" routerLink="/">
+      <i class="las la-file-alt fs-4"></i> Log Viewer
+    </a>
+
+    <span class="badge env-badge me-auto me-md-3" [class]="'env-' + env.env().key" title="{{ env.baseUrl() }}">
+      {{ env.env().label }}
+    </span>
+
+    <button class="btn btn-glass-light text-white d-md-none" type="button" (click)="toggleNavbar()" #navbarToggler
             aria-controls="navbarCollapse" [attr.aria-expanded]="isNavbarOpen" aria-label="Toggle navigation">
-      <span class="custom-toggler-icon" [ngClass]="{'open': isNavbarOpen}">
-        <i [ngClass]="isNavbarOpen ? 'las la-times fs-2' : 'las la-bars fs-2'"></i>
-      </span>
+      <i [ngClass]="isNavbarOpen ? 'las la-times fs-4' : 'las la-bars fs-4'"></i>
     </button>
+
     <div class="collapse navbar-collapse" id="navbarCollapse" #navbarCollapse>
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <div class="d-flex gap-3">
-            <a class="nav-link text-light" href="javascript:void(0)" (click)="closeNavbar()">ENV: <span class="text-env">{{labelEnv}}</span></a>
-            <a class="nav-link text-light" href="javascript:void(0)" (click)="switchEnv('uat')">UAT</a>
-            <a class="nav-link text-light" href="javascript:void(0)" (click)="switchEnv('demo')">DEMO/STG</a>
-            <a class="nav-link text-light" href="javascript:void(0)" (click)="switchEnv('prod')">PROD</a>
+      <ul class="navbar-nav me-auto mb-2 mb-md-0">
+        @if (auth.isAuthenticated()) {
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeNavbar()">
+              <i class="las la-folder-open"></i> Logs
+            </a>
+          </li>
+        }
+        <li class="nav-item" ngbDropdown>
+          <a class="nav-link" role="button" tabindex="0" ngbDropdownToggle>
+            <i class="las la-server"></i> Environment
+          </a>
+          <div ngbDropdownMenu>
+            @for (e of environments; track e.key) {
+              <button ngbDropdownItem (click)="switchEnv(e.key)" [class.active]="e.key === env.env().key">
+                {{ e.label }} <small class="text-muted d-block">{{ e.url }}</small>
+              </button>
+            }
           </div>
         </li>
-        <li class="nav-item">
-          <a class="nav-link text-light btn btn-glass-dark" href="javascript:void(0)" routerLink="/" (click)="closeNavbar()">Dashboard</a>
-        </li>
       </ul>
-      <div class="d-flex">
-        <ul class="navbar-nav mb-2 mb-lg-0">
-          <li class="nav-item profile-menu" ngbDropdown container="body" display="dynamic" placement="bottom-right">
-            <a class="nav-link p-0 p-2 pt-3" tabindex="0" ngbDropdownToggle id="profile" role="button">
-              <span class="avatar avatar-primary fs-5">Server Log</span>
+
+      @if (auth.user(); as user) {
+        <ul class="navbar-nav">
+          <li class="nav-item" ngbDropdown placement="bottom-end">
+            <a class="nav-link d-flex align-items-center gap-2" role="button" tabindex="0" ngbDropdownToggle id="profile">
+              <span class="avatar">{{ initials() }}</span>
+              <span class="d-md-none d-lg-inline">{{ user.fullName || user.emailAddress }}</span>
             </a>
-            <div class="dropdown-menu p-0" ngbDropdownMenu aria-labelledby="profile">
-              <div class="card border-0 shadow-sm">
-                <div class="card-body px-0 py-1">
-                  <div class="list-group list-group-flush">
-                      <a ngbDropdownItem role="button" class="d-flex align-items-center my-2" routerLinkActive="active" (click)="closeNavbar()">Settings</a>
-                      <a ngbDropdownItem role="button" class="d-flex align-items-center" routerLinkActive="active" (click)="closeNavbar()">View Profile</a>
-                      <span><hr class="dropdown-divider my-1" /></span>
-                      <a ngbDropdownItem role="button" class="d-flex align-items-center" (click)="closeNavbar()">Logout</a>
-                  </div>
-                </div>
+            <div ngbDropdownMenu aria-labelledby="profile">
+              <div class="px-3 py-2 small">
+                <div class="fw-semibold">{{ user.fullName }}</div>
+                <div class="text-muted">{{ user.emailAddress }}</div>
+                <div class="text-muted">Signed in to {{ env.env().label }}</div>
               </div>
+              <div class="dropdown-divider"></div>
+              <button ngbDropdownItem (click)="logout()"><i class="las la-sign-out-alt"></i> Sign out</button>
             </div>
           </li>
         </ul>
-      </div>
+      }
     </div>
   </div>
 </nav>

@@ -1,82 +1,63 @@
-import { Component, ElementRef, HostListener, inject, OnInit, ViewChild } from '@angular/core';
-import { NgbModalModule, NgbModalConfig, NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
-import {  RouterModule } from '@angular/router';
+import { Component, ElementRef, HostListener, ViewChild, computed, inject } from '@angular/core';
+import { NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
+import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '@app/services/auth.service';
+import { ApiEnvironment, ENVIRONMENTS, EnvService } from '@app/services/env.service';
 
 @Component({
   selector: 'myt-header',
   standalone: true,
-  imports: [CommonModule,NgbModalModule,NgbDropdownModule,RouterModule],
+  imports: [CommonModule, NgbDropdownModule, RouterModule],
   templateUrl: './header.component.html',
-  styleUrl: './header.component.scss'
+  styleUrl: './header.component.scss',
 })
-export class HeaderComponent implements OnInit{
-  public isAuthenticated: boolean | undefined;
+export class HeaderComponent {
+  private readonly router = inject(Router);
+  readonly auth = inject(AuthService);
+  readonly env = inject(EnvService);
+  readonly environments = ENVIRONMENTS;
 
-  @ViewChild('navbarCollapse') navbarCollapse!: ElementRef;
-  @ViewChild('navbarToggler') navbarToggler!: ElementRef;
+  readonly initials = computed(() => {
+    const u = this.auth.user();
+    const source = u?.fullName?.trim() || u?.emailAddress || '';
+    return source.split(/\s+/).slice(0, 2).map(p => p[0]?.toUpperCase() ?? '').join('') || '?';
+  });
+
+  @ViewChild('navbarCollapse') navbarCollapse!: ElementRef<HTMLElement>;
+  @ViewChild('navbarToggler') navbarToggler!: ElementRef<HTMLElement>;
   isNavbarOpen = false;
 
-  public labelEnv!:string;
-
-  constructor(){
-    inject(NgbModalConfig).centered = true;
-  }
-  
-  ngOnInit(): void {
-    const env = JSON.parse(sessionStorage.getItem('env')!);
-    if(env.includes('uat.mytalentinc.com')){
-      this.labelEnv = 'UAT';
-    }else if(env.includes('api.mytalentinc.com')){
-      this.labelEnv = 'DEMO/STG';
-    }else if(env.includes('api.mynaturaltalents.com')){
-      this.labelEnv = 'PROD';
-    }else{
-      this.labelEnv = 'UAT';
-    }
-  }
-
-  toggleNavbar() {
+  toggleNavbar(): void {
     this.isNavbarOpen = !this.isNavbarOpen;
-    const collapse = this.navbarCollapse.nativeElement;
-    collapse.classList.toggle('show', this.isNavbarOpen);
+    this.navbarCollapse.nativeElement.classList.toggle('show', this.isNavbarOpen);
   }
 
-  closeNavbar() {
-    if (this.isNavbarOpen) {
-      this.isNavbarOpen = false;
-      const collapse = this.navbarCollapse.nativeElement;
-      collapse.classList.remove('show');
-    }
+  closeNavbar(): void {
+    if (!this.isNavbarOpen) return;
+    this.isNavbarOpen = false;
+    this.navbarCollapse.nativeElement.classList.remove('show');
   }
 
   @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent) {
-    const clickedInside = this.navbarCollapse?.nativeElement.contains(event.target) ||
-                          this.navbarToggler?.nativeElement.contains(event.target);
-    if (!clickedInside && this.isNavbarOpen) {
-      this.closeNavbar();
-    }
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as Node;
+    const inside = this.navbarCollapse?.nativeElement.contains(target) || this.navbarToggler?.nativeElement.contains(target);
+    if (!inside) this.closeNavbar();
   }
 
-  switchEnv(appEnv:string){
-    switch(appEnv){
-      case 'uat':
-          sessionStorage.setItem('env', JSON.stringify('https://uat.mytalentinc.com/assessments/api/v1'))
-          this.labelEnv = 'UAT';
-        break;
-        case 'demo':
-          sessionStorage.setItem('env', JSON.stringify('https://api.mytalentinc.com/assessments/api/v1'))
-          this.labelEnv = 'DEMO/STG';
-        break;
-        case 'prod':
-          sessionStorage.setItem('env', JSON.stringify('https://api.mynaturaltalents.com/assessments/api/v1'))
-          this.labelEnv = 'PROD';
-          break;
-        default:
-          sessionStorage.setItem('env', JSON.stringify('https://uat.mytalentinc.com/assessments/api/v1'))
-          this.labelEnv = 'UAT';
-    }
-    window.location.reload();
+  /** Each environment has its own session; without one, the guard sends us to login. */
+  switchEnv(key: ApiEnvironment['key']): void {
+    this.closeNavbar();
+    if (key === this.env.env().key) return;
+    this.auth.switchEnv(key);
+    const target = this.auth.isAuthenticated() ? '/' : '/login';
+    // Re-create the current page so it reloads data from the new environment.
+    this.router.navigateByUrl('/login', { skipLocationChange: true }).then(() => this.router.navigateByUrl(target));
+  }
+
+  logout(): void {
+    this.closeNavbar();
+    this.auth.logout().subscribe(() => this.router.navigate(['/login']));
   }
 }
