@@ -22,11 +22,11 @@
             </a>
           </li>
         }
-        <li class="nav-item" ngbDropdown>
+        <li class="nav-item" ngbDropdown display="dynamic" container="body">
           <a class="nav-link" role="button" tabindex="0" ngbDropdownToggle>
             <i class="las la-server"></i> Environment
           </a>
-          <div ngbDropdownMenu>
+          <div ngbDropdownMenu class="env-menu shadow border-0">
             @for (e of environments; track e.key) {
               <button ngbDropdownItem (click)="switchEnv(e.key)" [class.active]="e.key === env.env().key">
                 {{ e.label }} <small class="text-muted d-block">{{ e.url }}</small>
@@ -38,19 +38,31 @@
 
       @if (auth.user(); as user) {
         <ul class="navbar-nav">
-          <li class="nav-item" ngbDropdown placement="bottom-end">
-            <a class="nav-link d-flex align-items-center gap-2" role="button" tabindex="0" ngbDropdownToggle id="profile">
+          <!-- display="dynamic" + container="body": ng-bootstrap turns positioning off inside
+               navbars, which let the menu run past the window edge and clip the text. -->
+          <li class="nav-item" ngbDropdown display="dynamic" container="body" placement="bottom-end bottom-start">
+            <a class="nav-link profile-toggle d-flex align-items-center gap-2" role="button" tabindex="0"
+               ngbDropdownToggle id="profile" [attr.aria-label]="'Account: ' + (user.fullName || user.emailAddress)">
               <span class="avatar">{{ initials() }}</span>
-              <span class="d-md-none d-lg-inline">{{ user.fullName || user.emailAddress }}</span>
+              <span class="profile-name d-md-none d-lg-inline">{{ user.fullName || user.emailAddress }}</span>
             </a>
-            <div ngbDropdownMenu aria-labelledby="profile">
-              <div class="px-3 py-2 small">
-                <div class="fw-semibold">{{ user.fullName }}</div>
-                <div class="text-muted">{{ user.emailAddress }}</div>
-                <div class="text-muted">Signed in to {{ env.env().label }}</div>
+            <div ngbDropdownMenu class="profile-menu shadow border-0 p-0" aria-labelledby="profile">
+              <div class="profile-card">
+                <span class="avatar avatar-lg">{{ initials() }}</span>
+                <div class="profile-text">
+                  @if (user.fullName) { <div class="profile-card-name">{{ user.fullName }}</div> }
+                  <div class="profile-card-email">{{ user.emailAddress }}</div>
+                </div>
               </div>
-              <div class="dropdown-divider"></div>
-              <button ngbDropdownItem (click)="logout()"><i class="las la-sign-out-alt"></i> Sign out</button>
+              <div class="profile-env">
+                <i class="las la-server"></i>
+                <span>Signed in to <strong>{{ env.env().label }}</strong></span>
+              </div>
+              <div class="p-2">
+                <button ngbDropdownItem class="profile-signout" (click)="logout()">
+                  <i class="las la-sign-out-alt"></i> Sign out
+                </button>
+              </div>
             </div>
           </li>
         </ul>

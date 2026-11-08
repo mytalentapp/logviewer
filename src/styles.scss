@@ -1,9 +1,119 @@
-/* You can add global styles to this file, and also import other style files */
+/* Brand palette: the header's deep plum → crimson gradient and tints of it.
+   Every Bootstrap theme colour maps onto it, so buttons, badges, alerts and
+   focus rings stay on-brand. */
+$lv-plum-900: #240b36;
+$lv-plum-700: #4b1238;
+$lv-wine-600: #7d1238;
+$lv-crimson-500: #c31432;
+$lv-crimson-400: #d63c58;
+$lv-rose-300: #e98a9c;
+$lv-rose-100: #fbe9ec;
+$lv-rose-50: #fdf4f6;
 
-@use 'bootstrap/scss/bootstrap' as *;
+@use 'bootstrap/scss/bootstrap' as * with (
+  $primary: $lv-crimson-500,
+  $secondary: $lv-plum-700,
+  $success: $lv-wine-600,
+  $info: $lv-crimson-400,
+  $warning: $lv-rose-300,
+  $danger: #9e0b26,
+  $light: $lv-rose-50,
+  $dark: $lv-plum-900,
+  $link-color: $lv-crimson-500,
+  $component-active-bg: $lv-crimson-500,
+  $input-focus-border-color: $lv-rose-300,
+  $focus-ring-color: rgba($lv-crimson-500, 0.25),
+  $form-check-input-checked-bg-color: $lv-crimson-500,
+  $dropdown-link-active-bg: $lv-crimson-500,
+);
 @use "line-awesome/dist/line-awesome/scss/line-awesome.scss" as *;
 @use 'ngx-toastr/toastr' as *;
-html,body{
-    height: 100%;
-    font-size: 14px;
+
+:root {
+  --lv-plum-900: #{$lv-plum-900};
+  --lv-plum-700: #{$lv-plum-700};
+  --lv-wine-600: #{$lv-wine-600};
+  --lv-crimson-500: #{$lv-crimson-500};
+  --lv-crimson-400: #{$lv-crimson-400};
+  --lv-rose-300: #{$lv-rose-300};
+  --lv-rose-100: #{$lv-rose-100};
+  --lv-rose-50: #{$lv-rose-50};
+  --lv-gradient: linear-gradient(to right, #{$lv-plum-900}, #{$lv-crimson-500});
 }
+
+html, body {
+  height: 100%;
+  font-size: 14px;
+}
+
+body {
+  background: var(--lv-rose-50);
+}
+
+/* Header menus. They render in <body> (container="body"), so they are styled here. */
+.profile-menu {
+  width: max-content;
+  min-width: 260px;
+  max-width: min(340px, calc(100vw - 16px));
+  border-radius: 12px;
+  overflow: hidden;
+
+  .profile-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: var(--lv-gradient);
+    color: #fff;
+  }
+  .avatar-lg {
+    flex: 0 0 auto;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+  }
+  .profile-text { min-width: 0; }
+  .profile-card-name { font-weight: 600; line-height: 1.3; }
+  .profile-card-email {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    overflow-wrap: anywhere; /* long emails wrap instead of being cut off */
+  }
+  .profile-env {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    color: var(--lv-plum-700);
+    background: var(--lv-rose-50);
+    border-bottom: 1px solid var(--lv-rose-100);
+  }
+  .profile-signout {
+    border-radius: 8px;
+    color: var(--lv-crimson-500);
+    font-weight: 500;
+    &:hover, &:focus { background: var(--lv-rose-100); color: var(--lv-crimson-500); }
+  }
+}
+
+.env-menu {
+  border-radius: 10px;
+  .dropdown-item {
+    white-space: normal;
+    &.active, &:active { background: var(--lv-crimson-500); }
+    &.active small { color: rgba(255, 255, 255, 0.8) !important; }
+  }
+}
+
+/* Toasts in the same palette */
+.toast-success { background-color: $lv-wine-600; }
+.toast-error { background-color: #9e0b26; }
+.toast-info { background-color: $lv-crimson-400; }
+.toast-warning { background-color: $lv-plum-700; }

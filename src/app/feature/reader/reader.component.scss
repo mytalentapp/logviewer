@@ -10,7 +10,7 @@
   position: relative;
   flex: 1;
   min-height: 300px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--lv-rose-100);
   border-radius: 6px;
   overflow: hidden;
   background: #fff;
@@ -35,7 +35,7 @@
   inset: 0 0 auto 0;
   height: 3px;
   z-index: 5;
-  background: linear-gradient(90deg, transparent, #c31432, transparent);
+  background: linear-gradient(90deg, transparent, var(--lv-crimson-500), transparent);
   background-size: 50% 100%;
   background-repeat: no-repeat;
   animation: slide 1s linear infinite;
@@ -50,9 +50,9 @@
     border-radius: 50%;
     background: currentColor;
   }
-  &.state-live { color: #198754; .dot { animation: pulse 1.5s ease-in-out infinite; } }
-  &.state-connecting, &.state-reconnecting { color: #b26a00; }
-  &.state-error { color: #dc3545; }
+  &.state-live { color: var(--lv-crimson-500); .dot { animation: pulse 1.5s ease-in-out infinite; } }
+  &.state-connecting, &.state-reconnecting { color: var(--lv-rose-300); }
+  &.state-error { color: #9e0b26; }
 }
 
 .spin { animation: spin 1s linear infinite; }

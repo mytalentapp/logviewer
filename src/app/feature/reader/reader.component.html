@@ -23,9 +23,9 @@
 
     <div class="btn-group btn-group-sm">
       <button type="button" class="btn"
-              [class.btn-success]="live() === 'live'"
+              [class.btn-primary]="live() === 'live'"
               [class.btn-warning]="live() === 'connecting' || live() === 'reconnecting'"
-              [class.btn-outline-success]="live() === 'off' || live() === 'error'"
+              [class.btn-outline-primary]="live() === 'off' || live() === 'error'"
               (click)="toggleLive()" [attr.aria-pressed]="live() !== 'off' && live() !== 'error'"
               title="Follow new lines as they are written">
         <i class="las" [class.la-broadcast-tower]="live() === 'off' || live() === 'error'" [class.la-stop]="live() !== 'off' && live() !== 'error'"></i>

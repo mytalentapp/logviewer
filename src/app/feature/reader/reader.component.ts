@@ -312,18 +312,24 @@ function registerLogLanguage(): void {
   monaco.editor.defineTheme('log-light', {
     base: 'vs',
     inherit: true,
+    // Brand palette only (plum → crimson), with weight and tint carrying severity.
     rules: [
-      { token: 'log-error', foreground: 'd32f2f', fontStyle: 'bold' },
-      { token: 'log-warn', foreground: 'b26a00', fontStyle: 'bold' },
-      { token: 'log-info', foreground: '1565c0' },
-      { token: 'log-debug', foreground: '808080' },
-      { token: 'log-exception', foreground: 'c2185b', fontStyle: 'bold' },
-      { token: 'log-stack', foreground: '9e5b5b' },
-      { token: 'log-date', foreground: '2e7d32' },
-      { token: 'log-thread', foreground: '6a1b9a' },
-      { token: 'log-url', foreground: '00838f', fontStyle: 'underline' },
-      { token: 'log-number', foreground: '00796b' },
+      { token: 'log-error', foreground: 'c31432', fontStyle: 'bold' },
+      { token: 'log-exception', foreground: 'c31432', fontStyle: 'bold' },
+      { token: 'log-warn', foreground: 'd63c58', fontStyle: 'bold' },
+      { token: 'log-info', foreground: '7d1238' },
+      { token: 'log-debug', foreground: 'a08a96' },
+      { token: 'log-stack', foreground: 'b5677a' },
+      { token: 'log-date', foreground: '4b1238' },
+      { token: 'log-thread', foreground: '8c5a7a' },
+      { token: 'log-url', foreground: '7d1238', fontStyle: 'underline' },
+      { token: 'log-number', foreground: '7d1238' },
     ],
-    colors: {},
+    colors: {
+      'editor.lineHighlightBackground': '#fdf4f6',
+      'editor.selectionBackground': '#f5c6cf',
+      'editorLineNumber.foreground': '#c9a9b6',
+      'editorLineNumber.activeForeground': '#c31432',
+    },
   });
 }

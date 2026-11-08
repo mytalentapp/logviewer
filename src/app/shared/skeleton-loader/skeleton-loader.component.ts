@@ -46,7 +46,7 @@ import { Component, Input } from '@angular/core';
     .skeleton-bar {
       height: 18px;
       width: 100%;
-      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background: linear-gradient(90deg, var(--lv-rose-50) 25%, var(--lv-rose-100) 50%, var(--lv-rose-50) 75%);
       background-size: 200% 100%;
       border-radius: 6px;
       animation: shimmer 2s infinite;
@@ -57,7 +57,7 @@ import { Component, Input } from '@angular/core';
     .skeleton-circle {
       width: 38px;
       height: 38px;
-      background: #e0e0e0;
+      background: var(--lv-rose-100);
       border-radius: 50%;
       margin-left: auto;
       animation: shimmer 2s infinite;

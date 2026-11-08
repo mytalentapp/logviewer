@@ -39,7 +39,7 @@ import { NgbCarouselModule } from "@ng-bootstrap/ng-bootstrap";
   .loading-text {
     font-size: 14px;
     // font-weight: bolder;
-    color: #012970;
+    color: var(--lv-crimson-500);
     display: inline-flex;
     align-items: center;
     letter-spacing: 0.3px;

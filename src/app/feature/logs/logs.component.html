@@ -1,6 +1,6 @@
 <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
   <h1 class="h5 mb-0 me-auto">Server logs
-    @if (!loading() && !error()) { <span class="badge text-bg-light ms-1">{{ logs().length }}</span> }
+    @if (!loading() && !error()) { <span class="badge count ms-1">{{ logs().length }}</span> }
   </h1>
   <div class="input-group search">
     <span class="input-group-text bg-white"><i class="las la-search"></i></span>
@@ -40,7 +40,7 @@
           <img [src]="log.isArchive ? 'gzip.png' : 'log.png'" alt="" width="64" class="mb-2">
           <div class="name text-truncate">{{ log.label }}</div>
           <div class="small text-muted">
-            @if (log.isCurrent) { <span class="badge text-bg-success">current</span> }
+            @if (log.isCurrent) { <span class="badge text-bg-primary">current</span> }
             @else if (log.isArchive) { archive }
             @else { log }
           </div>

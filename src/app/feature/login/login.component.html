@@ -12,8 +12,8 @@
         <div class="btn-group w-100" role="group" aria-labelledby="env-label">
           @for (e of environments; track e.key) {
             <button type="button" class="btn btn-sm"
-                    [class.btn-dark]="env.env().key === e.key"
-                    [class.btn-outline-secondary]="env.env().key !== e.key"
+                    [class.btn-primary]="env.env().key === e.key"
+                    [class.btn-outline-primary]="env.env().key !== e.key"
                     [attr.aria-pressed]="env.env().key === e.key"
                     (click)="selectEnv(e.key)">{{ e.label }}</button>
           }

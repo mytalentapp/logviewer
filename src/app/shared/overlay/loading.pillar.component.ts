@@ -27,10 +27,10 @@ import { CommonModule } from '@angular/common';
     }
 
   .loader {
-    color: #012970;
+    color: var(--lv-crimson-500);
     position: relative;
     font-size: 11px;
-    background: #012970;
+    background: var(--lv-crimson-500);
     animation: escaleY 1s infinite ease-in-out;
     width: 0.5em;
     height: 3.5em;
@@ -42,7 +42,7 @@ import { CommonModule } from '@angular/common';
     position: absolute;
     top: 0;
     left: 1em;
-    background: #012970;
+    background: var(--lv-crimson-500);
     width: 0.5em;
     height: 3.5em;
     animation: escaleY 1s infinite ease-in-out;
