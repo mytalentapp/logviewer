@@ -304,25 +304,26 @@ function registerLogLanguage(): void {
         [/^Caused by:.*$/, 'log-exception'],
         [/\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}([.,]\d+)?(Z|[+-]\d{2}:?\d{2})?/, 'log-date'],
         [/\[[^\]\s]{1,60}\]/, 'log-thread'],
-        // URLs are deliberately left unstyled (plain text) so they don't compete with errors.
+        [/\bhttps?:\/\/[^\s"'<>]+/, 'log-url'],
       ],
     },
   });
   monaco.editor.defineTheme('log-light', {
     base: 'vs',
     inherit: true,
-    // Only problems get colour, so errors stand out: red for errors, exceptions and
-    // their stack traces, amber for warnings. Everything else stays neutral, and links
-    // and numbers are plain text.
+    // Only problems get strong colour, so errors stand out: red for errors, exceptions
+    // and their stack traces, a muted dark gold for warnings. Links are the usual blue; everything
+    // else stays neutral.
     rules: [
       { token: 'log-error', foreground: 'e00000', fontStyle: 'bold' },
       { token: 'log-exception', foreground: 'e00000', fontStyle: 'bold' },
       { token: 'log-stack', foreground: 'c62828' },
-      { token: 'log-warn', foreground: 'b45309', fontStyle: 'bold' },
+      { token: 'log-warn', foreground: '8a6a12', fontStyle: 'bold' },
       { token: 'log-info', foreground: '1f2937' },
       { token: 'log-debug', foreground: '9ca3af' },
       { token: 'log-date', foreground: '6b7280' },
       { token: 'log-thread', foreground: '6b7280' },
+      { token: 'log-url', foreground: '1a5fd6' },
     ],
     colors: {
       'editor.lineHighlightBackground': '#f6f7f9',
