@@ -29,35 +29,56 @@
       }
 
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-        <div class="mb-3">
-          <label for="email" class="form-label small fw-semibold">Email address</label>
-          <input id="email" type="email" class="form-control" formControlName="emailAddress"
-                 autocomplete="username" autofocus
-                 [class.is-invalid]="form.controls.emailAddress.touched && form.controls.emailAddress.invalid">
-          <div class="invalid-feedback">Enter a valid email address.</div>
-        </div>
-
-        <div class="mb-4">
-          <label for="password" class="form-label small fw-semibold">Password</label>
-          <div class="input-group has-validation">
-            <input id="password" class="form-control" formControlName="userPassword"
-                   [type]="showPassword() ? 'text' : 'password'" autocomplete="current-password"
-                   [class.is-invalid]="form.controls.userPassword.touched && form.controls.userPassword.invalid">
-            <button type="button" class="btn btn-outline-secondary" (click)="showPassword.set(!showPassword())"
-                    [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'">
-              <i class="las" [class.la-eye]="!showPassword()" [class.la-eye-slash]="showPassword()"></i>
-            </button>
-            <div class="invalid-feedback">Enter your password.</div>
+        @if (step() === 'loginId') {
+          <div class="mb-4">
+            <label for="loginId" class="form-label small fw-semibold">Login ID</label>
+            <input id="loginId" type="email" class="form-control" formControlName="loginId"
+                   autocomplete="username" autofocus placeholder="you@example.com"
+                   [class.is-invalid]="form.controls.loginId.touched && form.controls.loginId.invalid">
+            <div class="invalid-feedback">Your login ID is your email address.</div>
+            <div class="form-text">Administrators only. We'll email you a one-time sign-in code.</div>
           </div>
-        </div>
 
-        <button type="submit" class="btn btn-primary w-100" [disabled]="submitting()">
-          @if (submitting()) {
-            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Signing in…
-          } @else {
-            Sign in to {{ env.env().label }}
+          <button type="submit" class="btn btn-primary w-100" [disabled]="submitting()">
+            @if (submitting()) {
+              <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Sending code…
+            } @else {
+              Send sign-in code
+            }
+          </button>
+        } @else {
+          <div class="login-id mb-3">
+            <i class="las la-envelope"></i>
+            <span class="text-truncate" [title]="form.controls.loginId.value">{{ form.controls.loginId.value }}</span>
+            <button type="button" class="btn btn-link btn-sm p-0 ms-auto" (click)="changeLoginId()">Change</button>
+          </div>
+          @if (notice() && !error()) {
+            <div class="alert alert-light border py-2 small" role="status">{{ notice() }}</div>
           }
-        </button>
+
+          <div class="mb-4">
+            <label for="otpCode" class="form-label small fw-semibold">Sign-in code</label>
+            <input id="otpCode" class="form-control code-input" formControlName="otpCode"
+                   inputmode="numeric" autocomplete="one-time-code" autofocus maxlength="10"
+                   [class.is-invalid]="form.controls.otpCode.touched && form.controls.otpCode.invalid">
+            <div class="invalid-feedback">Enter the code from the email.</div>
+            <div class="form-text d-flex">
+              <span>The code is valid for 15 minutes.</span>
+              <button type="button" class="btn btn-link btn-sm p-0 ms-auto align-baseline"
+                      [disabled]="resendIn() > 0 || submitting()" (click)="sendCode()">
+                {{ resendIn() > 0 ? 'Resend in ' + resendIn() + 's' : 'Resend code' }}
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100" [disabled]="submitting()">
+            @if (submitting()) {
+              <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Signing in…
+            } @else {
+              Sign in to {{ env.env().label }}
+            }
+          </button>
+        }
       </form>
     </div>
   </div>

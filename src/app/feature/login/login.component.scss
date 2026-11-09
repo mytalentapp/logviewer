@@ -12,6 +12,25 @@
   border-radius: 12px;
 }
 
+.login-id {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background: var(--lv-rose-50);
+  border: 1px solid var(--lv-rose-100);
+  color: var(--lv-plum-700);
+}
+
+.code-input {
+  font-size: 1.25rem;
+  letter-spacing: 0.3em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
 .brand-icon {
   width: 52px;
   height: 52px;

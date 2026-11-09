@@ -23,7 +23,8 @@ interface LoginData extends SessionUser {
 }
 
 /**
- * Sign-in against the assessment API (POST /auth/login, /auth/refresh, /auth/logout).
+ * Admin-only sign-in against the assessment API with an emailed code
+ * (POST /auth/logs/code, /auth/logs/login), plus /auth/refresh and /auth/logout.
  *
  * Tokens are kept in sessionStorage, one session per API environment, so closing the tab
  * signs out and switching UAT/DEMO/PROD never sends one environment's token to another.
@@ -53,9 +54,26 @@ export class AuthService {
     return this.sessionSignal()?.accessToken ?? null;
   }
 
-  login(emailAddress: string, userPassword: string): Observable<SessionUser> {
+  /**
+   * Step 1: asks the API to email a sign-in code (POST /auth/logs/code). The API only
+   * sends it to administrators but answers the same for any address.
+   */
+  requestCode(loginId: string): Observable<string> {
     return this.http
-      .post<ApiResponse<LoginData>>(`${this.env.baseUrl()}/auth/login`, { emailAddress, userPassword })
+      .post<ApiResponse<string>>(`${this.env.baseUrl()}/auth/logs/code`, { loginId })
+      .pipe(
+        map(res => res?.message || 'If this email belongs to an administrator, a sign-in code has been sent to it'),
+        catchError((err: HttpErrorResponse | Error) => throwError(() => new Error(this.loginError(err)))),
+      );
+  }
+
+  /**
+   * Step 2: signs in with the emailed code (POST /auth/logs/login). Fails for anyone
+   * who isn't ADMIN, SUPER_ADMINISTRATOR or SYSTEM_ADMINISTRATOR.
+   */
+  login(loginId: string, otpCode: string): Observable<SessionUser> {
+    return this.http
+      .post<ApiResponse<LoginData>>(`${this.env.baseUrl()}/auth/logs/login`, { loginId, otpCode })
       .pipe(
         map(res => {
           const d = res?.data;
@@ -65,7 +83,7 @@ export class AuthService {
           const session: Session = {
             accessToken: d.accessToken,
             refreshToken: d.refreshToken,
-            user: { id: d.id, fullName: d.fullName, emailAddress: d.emailAddress ?? emailAddress },
+            user: { id: d.id, fullName: d.fullName, emailAddress: d.emailAddress ?? loginId },
           };
           this.store(session);
           return session.user;
@@ -158,7 +176,8 @@ export class AuthService {
   private loginError(err: HttpErrorResponse | Error): string {
     if (!(err instanceof HttpErrorResponse)) return err.message;
     if (err.status === 0) return `Can't reach the ${this.env.env().label} API. Check your connection (or CORS for this origin).`;
-    if (err.status === 401 || err.status === 400) return err.error?.message || 'Incorrect email or password.';
+    if (err.status === 403) return err.error?.message || "This account doesn't have access to server logs.";
+    if (err.status === 401 || err.status === 400) return err.error?.message || 'Invalid or expired code.';
     if (err.status === 429) return 'Too many attempts. Please wait a moment and try again.';
     return err.error?.message || `Login failed (${err.status}).`;
   }

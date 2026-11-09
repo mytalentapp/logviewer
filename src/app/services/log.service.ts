@@ -115,15 +115,21 @@ export class LogService {
           } catch { /* not JSON */ }
           throw new LogApiError(this.describe(res.status, message), res.status);
         }
+        if (!(res.headers.get('Content-Type') ?? '').includes('text/event-stream')) {
+          throw new LogApiError("The API didn't return a log stream. Is it up to date?", 415);
+        }
 
         refreshed = false;
         attempt = 0;
+        // A 200 with an event stream means we're connected. Don't wait for the server's
+        // "connected" event: a buffering proxy can hold it back, which used to leave the
+        // UI on "Connecting…" forever.
+        subscriber.next({ type: 'connected', size: 0 });
         await this.readEvents(res.body, controller.signal, (event, data, id) => {
           if (id) lastEventId = id;
           switch (event) {
             case 'connected':
-              subscriber.next({ type: 'connected', size: Number(data) || 0 });
-              break;
+              break; // already reported when the response arrived
             case 'log':
             case 'message':
               subscriber.next({ type: 'lines', text: data });
