@@ -304,32 +304,31 @@ function registerLogLanguage(): void {
         [/^Caused by:.*$/, 'log-exception'],
         [/\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}([.,]\d+)?(Z|[+-]\d{2}:?\d{2})?/, 'log-date'],
         [/\[[^\]\s]{1,60}\]/, 'log-thread'],
-        [/\bhttps?:\/\/\S+/, 'log-url'],
-        [/\b\d+(\.\d+)?(ms|s)\b/, 'log-number'],
+        // URLs are deliberately left unstyled (plain text) so they don't compete with errors.
       ],
     },
   });
   monaco.editor.defineTheme('log-light', {
     base: 'vs',
     inherit: true,
-    // Brand palette only (plum → crimson), with weight and tint carrying severity.
+    // Only problems get colour, so errors stand out: red for errors, exceptions and
+    // their stack traces, amber for warnings. Everything else stays neutral, and links
+    // and numbers are plain text.
     rules: [
-      { token: 'log-error', foreground: 'c31432', fontStyle: 'bold' },
-      { token: 'log-exception', foreground: 'c31432', fontStyle: 'bold' },
-      { token: 'log-warn', foreground: 'd63c58', fontStyle: 'bold' },
-      { token: 'log-info', foreground: '7d1238' },
-      { token: 'log-debug', foreground: 'a08a96' },
-      { token: 'log-stack', foreground: 'b5677a' },
-      { token: 'log-date', foreground: '4b1238' },
-      { token: 'log-thread', foreground: '8c5a7a' },
-      { token: 'log-url', foreground: '7d1238', fontStyle: 'underline' },
-      { token: 'log-number', foreground: '7d1238' },
+      { token: 'log-error', foreground: 'e00000', fontStyle: 'bold' },
+      { token: 'log-exception', foreground: 'e00000', fontStyle: 'bold' },
+      { token: 'log-stack', foreground: 'c62828' },
+      { token: 'log-warn', foreground: 'b45309', fontStyle: 'bold' },
+      { token: 'log-info', foreground: '1f2937' },
+      { token: 'log-debug', foreground: '9ca3af' },
+      { token: 'log-date', foreground: '6b7280' },
+      { token: 'log-thread', foreground: '6b7280' },
     ],
     colors: {
-      'editor.lineHighlightBackground': '#fdf4f6',
-      'editor.selectionBackground': '#f5c6cf',
-      'editorLineNumber.foreground': '#c9a9b6',
-      'editorLineNumber.activeForeground': '#c31432',
+      'editor.lineHighlightBackground': '#f6f7f9',
+      'editor.selectionBackground': '#dbe4f0',
+      'editorLineNumber.foreground': '#b0b5bd',
+      'editorLineNumber.activeForeground': '#4b5563',
     },
   });
 }
